@@ -1,0 +1,10 @@
+# Backend
+apps/backend/server
+
+# Client
+apps/client/node_modules/
+apps/client/dist/
+apps/client/.expo/
+
+# OS
+.DS_Store
