@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"foreningsliv/backend/auth"
 	"foreningsliv/backend/db"
 	"foreningsliv/backend/graph"
 
@@ -29,23 +30,27 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// GraphQL server
+	// REST: Login endpoint
+	mux.HandleFunc("/auth/login", auth.LoginHandler)
+
+	// GraphQL server with auth middleware
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{},
 	}))
 
-	// GraphQL endpoint with CORS
+	// GraphQL endpoint with CORS + auth middleware
 	mux.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		srv.ServeHTTP(w, r)
+		// Wrap the GraphQL handler with auth middleware
+		auth.Middleware(srv).ServeHTTP(w, r)
 	})
 
 	// GraphQL Playground at /playground

@@ -7,11 +7,16 @@ package graph
 
 import (
 	"context"
+	"foreningsliv/backend/auth"
 	"foreningsliv/backend/graph/model"
 )
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	user := auth.UserFromContext(ctx)
+	if user != nil {
+		return &model.User{Name: user.Name}, nil
+	}
 	return &model.User{Name: "guest"}, nil
 }
 
