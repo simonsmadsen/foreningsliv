@@ -14,18 +14,27 @@ const API_URL =
     : process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8080"; // Android emulator -> host
 
 export default function App() {
-  const [message, setMessage] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/hello`)
+    fetch(`${API_URL}/graphql`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `query { me { name } }`,
+      }),
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((data) => {
-        setMessage(data.message);
+        if (data.errors) {
+          throw new Error(data.errors[0].message);
+        }
+        setName(data.data.me.name);
         setLoading(false);
       })
       .catch((err) => {
@@ -37,7 +46,9 @@ export default function App() {
   return (
     <View style={styles.container}>
       {loading && <ActivityIndicator size="large" color="#0066cc" />}
-      {message && <Text style={styles.message}>{message}</Text>}
+      {name && (
+        <Text style={styles.message}>Hello, {name}!</Text>
+      )}
       {error && <Text style={styles.error}>Error: {error}</Text>}
       <StatusBar style="auto" />
     </View>
