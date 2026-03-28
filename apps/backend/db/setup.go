@@ -60,16 +60,31 @@ func Close() {
 
 // migrate ensures all required tables exist.
 func migrate(ctx context.Context) error {
-	// Enable uuid-ossp extension for uuid_generate_v4()
 	migrations := []string{
+		// Extensions
 		`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
-		`CREATE TABLE IF NOT EXISTS auth (
-			id       UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			email    TEXT NOT NULL UNIQUE,
-			password TEXT NOT NULL,
+
+		// Profile table: a person in the system
+		`CREATE TABLE IF NOT EXISTS profile (
+			id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			name       TEXT NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+
+		// Auth table: one profile can have multiple auth methods
+		// (email/password, Google, Facebook, etc.)
+		`CREATE TABLE IF NOT EXISTS auth (
+			id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			profile_id UUID NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
+			email      TEXT NOT NULL UNIQUE,
+			password   TEXT NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+
+		// Index for looking up all auth methods for a profile
+		`CREATE INDEX IF NOT EXISTS idx_auth_profile_id ON auth(profile_id)`,
 	}
 
 	for _, m := range migrations {
