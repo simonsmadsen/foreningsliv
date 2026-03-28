@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"foreningsliv/backend/db"
 	"foreningsliv/backend/graph"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -17,6 +18,12 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	// Connect to PostgreSQL and run migrations
+	if err := db.Setup(); err != nil {
+		log.Fatalf("Database setup failed: %v", err)
+	}
+	defer db.Close()
 
 	staticDir := os.Getenv("STATIC_DIR")
 
